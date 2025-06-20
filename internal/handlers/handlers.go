@@ -17,7 +17,13 @@ func HandleMain(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	html, err := os.ReadFile("index.html")
+	abs, err := filepath.Abs("./index.html")
+	if err != nil {
+		http.Error(res, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	html, err := os.ReadFile(abs)
 	if err != nil {
 		http.Error(res, "Failed to load file", http.StatusInternalServerError)
 		return
