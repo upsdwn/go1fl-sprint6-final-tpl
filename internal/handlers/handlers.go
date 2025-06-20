@@ -34,7 +34,7 @@ func HandleUpload(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	file, handler, err := req.FormFile("myFile")
+	file, _, err := req.FormFile("myFile")
 	if err != nil {
 		http.Error(res, "Failed to get file from form", http.StatusInternalServerError)
 		return
@@ -48,18 +48,21 @@ func HandleUpload(res http.ResponseWriter, req *http.Request) {
 	}
 
 	text := service.ConvertMorse(string(data))
+	name := fmt.Sprintf("../file_%s%s", time.Now().UTC().Format("20060102_150405"), filepath.Ext("*.txt"))
 
-	ext := filepath.Ext(handler.Filename)
-	datetime := time.Now().UTC().Format("20060102_150405")
-	fileName := fmt.Sprintf("file_%s%s", datetime, ext)
-
-	err = os.WriteFile(fileName, []byte(text), 0o755)
+	newFile, err := os.Create(name)
 	if err != nil {
-		http.Error(res, "Failed to save file", http.StatusInternalServerError)
+		http.Error(res, name, http.StatusInternalServerError)
 		return
 	}
+	defer newFile.Close()
 
+	_, err = newFile.WriteString(text)
+	if err != nil {
+		http.Error(res, "Failed to write result to file", http.StatusInternalServerError)
+		return
+	}
 	res.Header().Set("Content-Type", "text/html; charset=utf-8")
 	res.WriteHeader(http.StatusOK)
-	res.Write([]byte(text))
+	fmt.Fprint(res, text)
 }
